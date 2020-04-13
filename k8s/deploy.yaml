@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: icp4a-auth
+  labels:
+    app: icp4a-auth
+    service: icp4a-auth
+spec:
+  selector:
+    app: icp4a-auth
+  ports:
+    - name: http
+      port: 3000
+      targetPort: nodejs
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  config.js: |-
+    module.exports = {
+      endpoint: {
+        base:
+          "https://icp-console.apps.hcp.darumtech.net/idprovider/v1/auth/logout?login_url=https://console-openshift-console.apps.hcp.darumtech.net",
+        others: [
+          "https://openshift-iam.cloudzcp.io/auth/realms/zcp/protocol/openid-connect/logout",
+        ],
+      },
+    };
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: icp4a-auth
+  labels:
+    app: icp4a-auth
+spec:
+  selector:
+    matchLabels:
+      app: icp4a-auth
+  replicas: 1
+  template:
+    metadata:
+      name: icp4a-auth
+      labels:
+        app: icp4a-auth
+    spec:
+      containers:
+        - name: icp4a-auth
+          image: icp4a/icp4a-auth:latest
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: app-config
+              mountPath: /app/config.js
+              subPath: "config.js"
+          ports:
+            - name: nodejs
+              containerPort: 3000
+          livenessProbe:
+            httpGet:
+              path: /
+              port: nodejs
+            initialDelaySeconds: 3
+            periodSeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /
+              port: nodejs
+            initialDelaySeconds: 3
+            periodSeconds: 5
+      volumes:
+        - name: app-config
+          configMap:
+            name: app-config
+            items:
+              - key: config.js
+                path: config.js

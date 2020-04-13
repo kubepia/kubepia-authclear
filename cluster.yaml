@@ -1,0 +1,8 @@
+apiVersion: config.openshift.io/v1
+kind: Console
+metadata:
+  name: cluster
+spec:
+  authentication:
+    # logoutRedirect: https://icp-console.apps.hcp.darumtech.net/idprovider/v1/auth/logout?login_url=https://console-openshift-console.apps.hcp.darumtech.net
+    logoutRedirect: "https://icp4a-auth-kube-system.apps.hcp.darumtech.net/logout"
